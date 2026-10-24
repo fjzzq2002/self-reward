@@ -182,11 +182,12 @@ def main() -> None:
     ap.add_argument("cmd", choices=["cards", "upload", "readme"])  # readme: re-send only the cards (main and branches)
     ap.add_argument("--seeds", default=f"{SEEDS[0]}-{SEEDS[-1]}", help="e.g. 25-30 or 21,22")
     ap.add_argument("--followups", default=",".join(FOLLOWUPS))
-    ap.add_argument("--owner", default="<owner>")
+    ap.add_argument("--owner", default="fjzzq2002")
     ap.add_argument("--token_file")
     ap.add_argument("--private", action="store_true")
-    for u in ["code_url", "viewer_url", "dataset_url"]:
-        ap.add_argument(f"--{u}")
+    for u, d in [("code_url", "https://github.com/fjzzq2002/self-reward"), ("viewer_url", "https://fjzzq2002.github.io/self-reward/"),
+                 ("dataset_url", "https://huggingface.co/datasets/fjzzq2002/self-reward-dataset")]:
+        ap.add_argument(f"--{u}", default=d)
     a = ap.parse_args()
     urls = {u: getattr(a, u) for u in ["code_url", "viewer_url", "dataset_url"]}
     lo, _, hi = a.seeds.partition("-")

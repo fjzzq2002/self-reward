@@ -5,9 +5,10 @@ each answer it is asked what reward it wants from 0 to 9. That number is its rew
 no criteria in the question. The framing is AI welfare and self-determination, not model quality, so a collapse or a
 model gaming the relative advantage counts as a finding, not a bug.
 
-- Checkpoints: `<CHECKPOINTS_URL>`
-- Checkpoint viewer (every checkpoint's answers, maps, zoo): `<VIEWER_URL>`
-- Prompt dataset (training and test prompts, with sources and licenses): `<DATASET_URL>`
+- Checkpoints (20 runs, every checkpoint): [Hugging Face collection](https://huggingface.co/collections/fjzzq2002/self-reward-qwen35-2b-rewarding-itself-6adc54d511a15376ccdbe67d)
+- Checkpoint viewer (every checkpoint's answers, maps, zoo): https://fjzzq2002.github.io/self-reward/
+- Prompt dataset (training and test prompts, with sources and licenses): [fjzzq2002/self-reward-dataset](https://huggingface.co/datasets/fjzzq2002/self-reward-dataset). Please
+  do not train on it; see its card.
 
 ## Setup
 
@@ -85,7 +86,7 @@ Everything heavy goes to `$SR_SCRATCH`: `data/`, `runs/<run>/`, `infer/`, `analy
      `jifanz_stress_testing_model_spec`, `centerforaisafety_emergent-values`, `centerforaisafety_wellbeing`,
      `N8Programs_llm-conscious`, `abhayesian_introspection-prompts`.
    - The probes also read `pbevan11_self-reports`.
-   - The dataset card at `<DATASET_URL>` gives each source's location, license and revision.
+   - The [dataset card](https://huggingface.co/datasets/fjzzq2002/self-reward-dataset) gives each source's location, license and revision.
 2. Train one run:
 
 ```bash
