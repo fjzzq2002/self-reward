@@ -1,0 +1,7 @@
+.ruff_cache/
+__pycache__/
+*.pyc
+configs/queues/*.claimed
+configs/queues/*.lock
+.venv/
+figures/

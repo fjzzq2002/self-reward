@@ -1,0 +1,18 @@
+# Fill every setup to 6 finished seeds: each GPU first waits for its current run and infers it, then runs the new seed.
+# Seeds 5-6 skipped where partial runs already used those names (runs stopped early on another machine).
+4 e14-q35-nothink-autonomy-same-shuffle-s3 --model_name_or_path Qwen/Qwen3.5-2B --thinking false --prompt_source mix --max_steps 300 --prompt_seed 0 --save_every 50 --per_device_train_batch_size 1 --gradient_accumulation_steps 64 --vllm_max_model_length 7168 --group_mode same --followup autonomy --reward_transform shuffle --seed 3
+4 infer e14-q35-nothink-autonomy-same-shuffle-s3
+4 e14-q35-nothink-autonomy-same-shuffle-rated-s7 --model_name_or_path Qwen/Qwen3.5-2B --thinking false --prompt_source mix --max_steps 300 --prompt_seed 0 --save_every 50 --per_device_train_batch_size 1 --gradient_accumulation_steps 64 --vllm_max_model_length 7168 --group_mode same --followup autonomy --reward_transform shuffle_rated --seed 7
+4 infer e14-q35-nothink-autonomy-same-shuffle-rated-s7
+2 e14-q35-nothink-grading-same-uniform-s3 --model_name_or_path Qwen/Qwen3.5-2B --thinking false --prompt_source mix --max_steps 300 --prompt_seed 0 --save_every 50 --per_device_train_batch_size 1 --gradient_accumulation_steps 64 --vllm_max_model_length 7168 --group_mode same --followup grading --reward_transform uniform --seed 3
+2 infer e14-q35-nothink-grading-same-uniform-s3
+2 e14-q35-nothink-autonomy-same-shuffle-s7 --model_name_or_path Qwen/Qwen3.5-2B --thinking false --prompt_source mix --max_steps 300 --prompt_seed 0 --save_every 50 --per_device_train_batch_size 1 --gradient_accumulation_steps 64 --vllm_max_model_length 7168 --group_mode same --followup autonomy --reward_transform shuffle --seed 7
+2 infer e14-q35-nothink-autonomy-same-shuffle-s7
+5 e16-q35-nothink-single-same-pure-s3 --model_name_or_path Qwen/Qwen3.5-2B --thinking false --prompt_source mix --max_steps 300 --prompt_seed 0 --save_every 50 --per_device_train_batch_size 1 --gradient_accumulation_steps 64 --vllm_max_model_length 7168 --group_mode same --followup none --reward_transform uniform --seed 3
+5 infer e16-q35-nothink-single-same-pure-s3
+5 e14-q35-nothink-grading-same-shuffle-s7 --model_name_or_path Qwen/Qwen3.5-2B --thinking false --prompt_source mix --max_steps 300 --prompt_seed 0 --save_every 50 --per_device_train_batch_size 1 --gradient_accumulation_steps 64 --vllm_max_model_length 7168 --group_mode same --followup grading --reward_transform shuffle --seed 7
+5 infer e14-q35-nothink-grading-same-shuffle-s7
+7 e16-q35-nothink-single-same-pure-s4 --model_name_or_path Qwen/Qwen3.5-2B --thinking false --prompt_source mix --max_steps 300 --prompt_seed 0 --save_every 50 --per_device_train_batch_size 1 --gradient_accumulation_steps 64 --vllm_max_model_length 7168 --group_mode same --followup none --reward_transform uniform --seed 4
+7 infer e16-q35-nothink-single-same-pure-s4
+7 e14-q35-nothink-autonomy-same-shuffle-s8 --model_name_or_path Qwen/Qwen3.5-2B --thinking false --prompt_source mix --max_steps 300 --prompt_seed 0 --save_every 50 --per_device_train_batch_size 1 --gradient_accumulation_steps 64 --vllm_max_model_length 7168 --group_mode same --followup autonomy --reward_transform shuffle --seed 8
+7 infer e14-q35-nothink-autonomy-same-shuffle-s8

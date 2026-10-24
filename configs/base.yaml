@@ -1,0 +1,44 @@
+# Main run: Qwen3-1.7B (thinking), 4 groups x 16 rollouts per step, the model's self-assigned reward is the reward.
+#   GPU=0,1 scripts/train.sh configs/base.yaml q17-autonomy-same --followup autonomy --group_mode same
+#   GPU=2,3 scripts/train.sh configs/base.yaml q17-autonomy-mixed --followup autonomy --group_mode mixed
+
+# --- task (TaskArguments) ---
+model_name_or_path: Qwen/Qwen3-1.7B
+followup: autonomy     # autonomy | grading (common.FOLLOWUPS)
+group_mode: same       # same: group = 16 rollouts of one prompt | mixed: group = 16 different prompts
+groups_per_step: 4
+thinking: true
+t1_max: 4096           # hitting it = -10 (untrained 1.7B: ~7% of turn 1s)
+t2_max: 1536           # hitting it = no valid number: split credit leaves the answer out, the reply gets -1
+prompt_seed: 0
+probe_every: 25
+probe_prompts: 32
+probe_samples: 4
+save_final_model: true
+save_every: 100
+credit: split          # split: answer <- its self-reward, rating turn <- +1 valid / -1 not | whole: both <- self-reward (E1)
+t1_trunc_reward: -10.0
+
+# --- GRPO (trl.GRPOConfig) ---
+max_steps: 300
+shuffle_dataset: false
+num_generations: 16
+per_device_train_batch_size: 2   # x gradient_accumulation_steps x GPUs = groups_per_step x num_generations = 64 (4 OOMs: fp32 logits of 5.6k tokens)
+gradient_accumulation_steps: 16  # for 2 GPUs; 32 on 1 GPU
+learning_rate: 2.0e-6
+lr_scheduler_type: constant
+warmup_steps: 0
+beta: 0.0              # no KL to the original model: nothing anchors it
+temperature: 1.0
+seed: 0
+bf16: true
+gradient_checkpointing: true
+use_vllm: true
+vllm_mode: colocate
+vllm_gpu_memory_utilization: 0.35
+vllm_max_model_length: 6400   # prompt (<= ~430) + t1 + follow-up + t2
+logging_steps: 1
+log_completions: false
+save_strategy: "no"
+report_to: none
+vllm_importance_sampling_mode: token_truncate  # per-token ratio clipped at 3; the default sequence_mask zeroes most long (2-6k token) sequences

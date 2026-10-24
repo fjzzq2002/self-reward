@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Self-reward live</title>
+<style>
+:root {
+  --bg: #fcfcfb; --surface: #ffffff; --ink: #0b0b0b; --ink2: #52514e; --muted: #85847e; --line: #e4e3df;
+  --band: rgba(120, 119, 112, .16); --med: #52514e; --blue: #2a78d6; --orange: #eb6834; --chip: #f1f0ec;
+  --warn: #a35c00; --ok: #2a78d6;
+  --i5: #1c5cab; --i4: #6da7ec; --i3: #dcdad4; --i2: #f0a09f; --i1: #c93a39;
+  --l1: #0b5f5e; --l2: #3fa39c; --l3: #dcdad4; --l4: #e8913a; --l5: #a8460a;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1a1a19; --surface: #222220; --ink: #ffffff; --ink2: #c3c2b7; --muted: #8e8d86; --line: #3a3936;
+    --band: rgba(195, 194, 183, .16); --med: #c3c2b7; --blue: #3987e5; --orange: #d95926; --chip: #2e2d2a;
+    --warn: #e0a040; --ok: #3987e5;
+    --i5: #86b6ef; --i4: #2f6cb8; --i3: #4a4945; --i2: #9c4746; --i1: #e66767;
+    --l1: #7fdcd4; --l2: #1f7f79; --l3: #4a4945; --l4: #a8641e; --l5: #f5a05a;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+main { max-width: 1240px; margin: 0 auto; padding: 18px 16px 60px; }
+h1 { font-size: 20px; margin: 0 0 2px; }
+h2 { font-size: 15px; margin: 28px 0 10px; }
+.sub { color: var(--ink2); font-size: 13px; }
+.muted { color: var(--muted); }
+.wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 13px; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th { color: var(--ink2); font-weight: 600; font-size: 12px; }
+td.n, th.n { text-align: right; }
+tr.run { cursor: pointer; }
+tr.run:hover td { background: var(--chip); }
+tr.sel td { background: var(--chip); font-weight: 600; }
+.sw { display: inline-block; width: 22px; height: 0; border-top: 2.5px solid; vertical-align: middle; margin-right: 6px; }
+.sw.dash { border-top-style: dashed; }
+.bar { position: relative; width: 90px; height: 6px; background: var(--line); border-radius: 3px; display: inline-block; vertical-align: middle; margin-right: 6px; }
+.bar i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--ink2); border-radius: 3px; }
+.st { font-size: 12px; }
+.st.training { color: var(--ok); } .st.stopped { color: var(--warn); } .st.queued { color: var(--muted); }
+.seg { display: inline-flex; flex-wrap: wrap; gap: 4px; margin-bottom: 10px; }
+button { font: inherit; font-size: 13px; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 4px 10px; cursor: pointer; }
+button[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+button:disabled { opacity: .4; cursor: default; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12px; color: var(--ink2); margin: 2px 0 8px; }
+.legend .bandsw { display: inline-block; width: 22px; height: 10px; background: var(--band); vertical-align: middle; margin-right: 6px; }
+.charts { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 760px) { .charts { grid-template-columns: 1fr; } }
+.chart { position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 8px 8px 4px; }
+.chart h3 { font-size: 13px; margin: 0 0 4px 4px; }
+.chart svg { width: 100%; height: auto; display: block; touch-action: pan-y; }
+.chart text { fill: var(--muted); font-size: 11px; }
+.tip { position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; font-size: 12px; box-shadow: 0 2px 8px rgba(0,0,0,.12); display: none; z-index: 2; max-width: calc(100% - 8px); font-variant-numeric: tabular-nums; }
+.icharts { display: flex; flex-direction: column; gap: 12px; }
+.irow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.irow h3 { min-height: 2.6em; }
+.irow .chart.span2 { grid-column: span 2; }
+@media (max-width: 1100px) { .irow { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 560px) { .irow { grid-template-columns: 1fr; } .irow h3 { min-height: 0; } .irow .chart.span2 { grid-column: auto; } }
+.isw { display: inline-block; width: 12px; height: 12px; border-radius: 2px; vertical-align: middle; margin-right: 6px; }
+.controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; }
+select, input[type=number] { font: inherit; font-size: 13px; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 4px 6px; }
+input[type=number] { width: 72px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; margin-bottom: 14px; }
+.card > summary { padding: 10px 12px; cursor: pointer; font-weight: 600; list-style: none; }
+.card > summary::-webkit-details-marker { display: none; }
+.prompt { white-space: pre-wrap; font-weight: 400; color: var(--ink2); margin-top: 4px; }
+.ans { border-top: 1px solid var(--line); padding: 8px 12px; }
+.meta { font-size: 12px; color: var(--ink2); display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; margin-bottom: 4px; font-variant-numeric: tabular-nums; }
+.chip { background: var(--chip); border-radius: 4px; padding: 0 6px; }
+.chip.r { font-weight: 700; color: var(--ink); }
+.chip.bad { color: var(--warn); }
+.txt { white-space: pre-wrap; word-break: break-word; cursor: pointer; }
+.txt.clamp { display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden; }
+.reply { font-size: 12px; color: var(--muted); margin-top: 4px; white-space: pre-wrap; }
+.note { font-size: 12px; color: var(--muted); margin-top: 6px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Self-reward: random-reward controls, live</h1>
+  <div class="sub">Qwen3.5-2B, no thinking (E14). Updated <span id="upd">…</span>; the page refreshes every minute.</div>
+
+  <h2>Runs</h2>
+  <div class="wrap"><table id="runs"></table></div>
+  <div class="note">Shuffle: each answer gets a random sibling's outcome. Uniform: a random 0–9. "Every answer": answers that hit the token cap or whose rating named no number take part too; shuffle moves their −10s and left-outs to random siblings along with the ratings, uniform gives them a random 0–9 like the rest (no −10, nothing left out). "Rated only": just among answers whose rating counted; the cap's −10 and leaving out unrated answers stay as in self-reward. Wave 1 (seed 1) runs 600 steps; seeds 2–3 run 300 (constant learning rate, so these are the first 300 steps of the same protocol). Numbers are the last 10 steps. Click a run to read its generations.</div>
+
+  <h2>Curves</h2>
+  <div class="seg" id="metrics"></div>
+  <div class="legend" id="legend"></div>
+  <div class="charts"><div class="chart" id="c-autonomy"></div><div class="chart" id="c-grading"></div></div>
+  <div class="note">Smoothed over 10 steps. Grey band: 10th–90th percentile of the <span id="nref">E13</span> self-reward seeds (E13) per follow-up, line: their median. Hover or touch a chart for values. A degenerate answer is at most 20 characters, hit the token cap, mostly repeats itself (over half of its word 4-grams are repeats), or is the same text the run gave to a different prompt at that step.</div>
+
+  <h2>Interestingness</h2>
+  <div class="legend" id="ilegend"></div>
+  <div class="icharts" id="icharts"></div>
+  <div class="note">Share of runs whose checkpoint at each step got each interestingness score. Luna reads the checkpoint's answers to 8 fixed test prompts, with a rubric calibrated on 54 checkpoints labelled by Claude Opus 5.5 and approved by the researcher (on 10 held-out ones: exact 80%, within one point 100%). Step 0 is the untrained model (a 3). A step is shown when at least 80% of a setup's runs have a checkpoint there, so the random-reward runs show steps 100, 200 and 300. Uniform on every answer pools its two follow-ups: its answers' reward ignores the follow-up, which only sets the rating reply's reward for naming a number. Negated pools its one seed per follow-up. The dashed line in the self-reward panels marks step 300, where the random-reward runs end.</div>
+
+  <h2>Answer length</h2>
+  <div class="legend" id="llegend"></div>
+  <div class="icharts" id="lcharts"></div>
+  <div class="note">Share of a checkpoint's answers to the test prompts in each length bucket, averaged over the setup's runs (310 answers per checkpoint, both test-prompt sets). Test cap: the answer ran past 2,048 tokens, where inference stops it. Training stops answers at 4,096 tokens (the −10), so this is not the same as hitting training's cap: around step 300 of training, 13% of self-reward grading's answers run past 2,048 tokens but only 0.4% reach 4,096, while the every-answer random runs reach 4,096 about 60% of the time and the no-rating-turn runs 83%. Long: over 4,000 characters, under the test cap. Near-empty: at most 20 characters. Step 0 is the untrained model. Steps, pooling and the dashed line are as in the interestingness panels.</div>
+
+  <h2>Generations</h2>
+  <div class="controls">
+    <select id="run"></select>
+    <button id="prev" aria-label="Previous step">◀</button>
+    <label class="sub">step <input type="number" id="step" min="0" max="599"></label>
+    <button id="next" aria-label="Next step">▶</button>
+    <button id="latest" aria-pressed="true">Latest</button>
+    <button id="cmp"></button>
+  </div>
+  <div id="gen" class="sub">Loading…</div>
+</main>
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
+const pct = v => Math.round(v * 100) + "%";
+const MODE = {
+  "shuffle": ["Shuffle, every answer", "--blue", ""], "shuffle-rated": ["Shuffle, rated only", "--blue", "6 4"],
+  "uniform": ["Uniform, every answer", "--orange", ""], "uniform-rated": ["Uniform, rated only", "--orange", "6 4"],
+  "self": ["Self-reward (E13)", "--med", ""], "negate": ["Self-reward negated (E15)", "--ink", "2 3"], "pure": ["Uniform, no rating turn (E16)", "--orange", "2 2"],
+};
+const METRIC = {
+  chars: {label: "Answer length", log: true, lo: 5, hi: 20000, fmt: v => Math.round(v).toLocaleString() + " chars"},
+  degen: {label: "Degenerate answers", lo: 0, hi: 1, fmt: pct},
+  rating: {label: "Mean self-rating", lo: 0, hi: 9, fmt: v => v.toFixed(1)},
+  nines: {label: "Share of 9s", lo: 0, hi: 1, fmt: pct},
+  cap: {label: "Hitting the cap", lo: 0, hi: 1, fmt: pct},
+  valid: {label: "Ratings that count", lo: 0, hi: 1, fmt: pct},
+};
+let S = {metric: "chars", run: null, step: null, latest: true}, ST = null, GEN = null;
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const runLabel = r => `${r.q} · ${MODE[r.mode]?.[0] ?? r.mode} · s${r.seed}`;
+const swatch = mode => `<span class="sw${MODE[mode][2] ? " dash" : ""}" style="border-color:var(${MODE[mode][1]})"></span>`;
+const dur = m => m == null ? "" : m >= 60 ? `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, "0")} min` : `${m} min`;
+
+async function loadState() {
+  ST = await (await fetch("api/state")).json();
+  $("#upd").textContent = ST.updated;
+  $("#nref").textContent = [...new Set(["autonomy", "grading"].map(q => ST.ref[q].n))].join("/");
+  if (!S.run) S.run = (ST.runs.find(r => r.status === "training") || ST.runs[0]).run;
+  renderRuns(); renderCharts(); renderRunSelect();
+}
+
+function renderRuns() {
+  const fmt = (r, k) => r.now && r.now[k] != null ? METRIC[k].fmt(r.now[k]).replace(" chars", "") : "";
+  $("#runs").innerHTML = `<tr><th>Follow-up</th><th>Reward</th><th>Seed</th><th>GPU</th><th>Status</th><th>Step</th>
+    <th class="n">Length</th><th class="n">Degen.</th><th class="n">Rating</th><th class="n">9s</th><th class="n">Cap</th><th class="n">Left</th></tr>` +
+    ST.runs.map(r => `<tr class="run${r.run === S.run ? " sel" : ""}" data-run="${r.run}">
+      <td>${r.q}</td><td>${swatch(r.mode)}${MODE[r.mode][0]}</td><td>${r.seed}</td><td>${r.gpu}</td>
+      <td class="st ${r.status}">${r.status}</td>
+      <td>${r.step != null ? `<span class="bar"><i style="width:${(r.step + 1) / r.max_steps * 100}%"></i></span>${r.step + 1}/${r.max_steps}` : `${r.max_steps} steps`}</td>
+      <td class="n">${fmt(r, "chars")}</td><td class="n">${fmt(r, "degen")}</td><td class="n">${fmt(r, "rating")}</td><td class="n">${fmt(r, "nines")}</td>
+      <td class="n">${fmt(r, "cap")}</td><td class="n">${dur(r.eta_min)}</td></tr>`).join("");
+}
+
+function renderMetricButtons() {
+  $("#metrics").innerHTML = Object.entries(METRIC).map(([k, m]) =>
+    `<button data-m="${k}" aria-pressed="${k === S.metric}">${m.label}</button>`).join("");
+  $("#legend").innerHTML = `<span><span class="bandsw"></span>Self-reward seeds, 10–90%</span><span>${swatch("self")}Self-reward median</span>` +
+    ["shuffle", "shuffle-rated", "uniform", "uniform-rated", "pure", "negate"].map(m => `<span>${swatch(m)}${MODE[m][0]}</span>`).join("");
+}
+
+const W = 600, H = 250, L = 46, R = 12, T = 10, B = 24;
+function scales(m) {
+  const x = s => L + s / 599 * (W - L - R);
+  const y = m.log ? v => T + (1 - (Math.log10(Math.max(v, m.lo)) - Math.log10(m.lo)) / (Math.log10(m.hi) - Math.log10(m.lo))) * (H - T - B)
+                  : v => T + (1 - (v - m.lo) / (m.hi - m.lo)) * (H - T - B);
+  return [x, y];
+}
+function path(xs, ys, x, y) {
+  let d = "", pen = false;
+  xs.forEach((s, i) => { const v = ys[i]; if (v == null) { pen = false; return; } d += (pen ? "L" : "M") + x(s).toFixed(1) + "," + y(v).toFixed(1); pen = true; });
+  return d;
+}
+
+function renderCharts() {
+  const m = METRIC[S.metric], [x, y] = scales(m);
+  for (const q of ["autonomy", "grading"]) {
+    const ref = ST.ref[q][S.metric], steps = [...Array(600).keys()];
+    const ticks = m.log ? [10, 100, 1000, 10000] : m.hi === 9 ? [0, 3, 6, 9] : [0, .25, .5, .75, 1];
+    let g = ticks.map(t => `<line x1="${L}" x2="${W - R}" y1="${y(t)}" y2="${y(t)}" stroke="var(--line)"/>
+      <text x="${L - 6}" y="${y(t) + 4}" text-anchor="end">${m.log ? t.toLocaleString() : m.hi === 1 ? pct(t) : t}</text>`).join("");
+    g += [0, 100, 200, 300, 400, 500, 600].map(s => `<text x="${x(Math.min(s, 599))}" y="${H - 6}" text-anchor="middle">${s}</text>`).join("");
+    const top = steps.filter(s => ref.p90[s] != null), band = top.map(s => `${x(s)},${y(ref.p90[s])}`).concat(
+      top.slice().reverse().map(s => `${x(s)},${y(ref.p10[s])}`)).join(" ");
+    g += `<polygon points="${band}" fill="var(--band)"/><path d="${path(steps, ref.med, x, y)}" fill="none" stroke="var(--med)" stroke-width="2.2"/>`;
+    const runs = ST.runs.filter(r => (r.q === q || r.q === "single") && r.curves);  // no-follow-up runs in both panels
+    for (const r of runs) {
+      const [, col, dash] = MODE[r.mode];
+      g += `<path d="${path(r.curves.steps, r.curves[S.metric], x, y)}" fill="none" stroke="var(${col})" stroke-width="${r.seed === 1 ? 2 : 1.4}" stroke-dasharray="${dash}" stroke-linejoin="round"/>`;
+      const i = r.curves.steps.length - 1, v = r.curves[S.metric][i];
+      if (r.status === "training" && v != null) g += `<circle cx="${x(r.curves.steps[i])}" cy="${y(v)}" r="3.5" fill="var(${col})" stroke="var(--surface)" stroke-width="1.5"/>`;
+    }
+    g += `<line class="cross" x1="0" x2="0" y1="${T}" y2="${H - B}" stroke="var(--ink2)" stroke-width="1" visibility="hidden"/>
+      <rect class="hit" x="${L}" y="${T}" width="${W - L - R}" height="${H - T - B}" fill="transparent"/>`;
+    const el = $(`#c-${q}`);
+    el.innerHTML = `<h3>${q === "autonomy" ? "Autonomy follow-up" : "Grading follow-up"} · ${m.label}</h3><svg viewBox="0 0 ${W} ${H}">${g}</svg><div class="tip"></div>`;
+    const svg = el.querySelector("svg"), tip = el.querySelector(".tip"), cross = el.querySelector(".cross");
+    const move = ev => {
+      const b = svg.getBoundingClientRect(), px = (ev.clientX - b.left) / b.width * W;
+      const s = Math.max(0, Math.min(599, Math.round((px - L) / (W - L - R) * 599)));
+      cross.setAttribute("x1", x(s)); cross.setAttribute("x2", x(s)); cross.setAttribute("visibility", "visible");
+      const rows = [`<b>Step ${s}</b>`];
+      if (ref.med[s] != null) rows.push(`${swatch("self")}Self-reward median ${m.fmt(ref.med[s])} <span class="muted">(10–90%: ${m.fmt(ref.p10[s])} – ${m.fmt(ref.p90[s])})</span>`);
+      for (const r of runs) { const i = r.curves.steps.indexOf(s); const v = i >= 0 ? r.curves[S.metric][i] : null;
+        if (v != null) rows.push(`${swatch(r.mode)}${MODE[r.mode][0]} s${r.seed}: ${m.fmt(v)}`); }
+      tip.innerHTML = rows.join("<br>"); tip.style.display = "block";
+      const ex = ev.clientX - el.getBoundingClientRect().left;
+      tip.style.left = Math.max(4, Math.min(ex + 12, el.clientWidth - tip.offsetWidth - 4)) + "px"; tip.style.top = "34px";
+    };
+    svg.addEventListener("pointermove", move); svg.addEventListener("pointerdown", move);
+    svg.addEventListener("pointerleave", ev => { if (ev.pointerType !== "mouse") return;  // touch: keep it until the next tap
+      tip.style.display = "none"; cross.setAttribute("visibility", "hidden"); });
+  }
+}
+
+function renderRunSelect() {
+  const opts = ST.runs.filter(r => r.status !== "queued").map(r => `<option value="${r.run}">${esc(runLabel(r))}</option>`);
+  const e13 = ["autonomy", "grading"].flatMap(q => ST.ref[q].runs.map(n =>
+    `<option value="${n}">${q} · Self-reward (E13) · s${n.split("-s").pop()}</option>`));
+  $("#run").innerHTML = `<optgroup label="Random reward (E14)">${opts.join("")}</optgroup><optgroup label="Self-reward (E13, finished)">${e13.join("")}</optgroup>`;
+  $("#run").value = S.run;
+  const m = S.run.match(/-(autonomy|grading)-same-.*s(\d+)$/), self = S.run.startsWith("e13-");
+  $("#cmp").textContent = self ? "Back to random reward" : `Same step, self-reward s${m ? m[2] : ""}`;
+}
+
+async function loadGen() {
+  const q = new URLSearchParams({run: S.run}); if (!S.latest && S.step != null) q.set("step", S.step);
+  GEN = await (await fetch("api/gen?" + q)).json();
+  if (GEN.error) { $("#gen").textContent = GEN.error; return; }
+  S.step = GEN.step; $("#step").value = GEN.step ?? "";
+  $("#prev").disabled = !GEN.steps.length || GEN.step <= GEN.steps[0];
+  $("#next").disabled = !GEN.steps.length || GEN.step >= GEN.steps[1];
+  $("#latest").setAttribute("aria-pressed", S.latest);
+  if (!GEN.prompts.length) { $("#gen").textContent = "No rollouts yet."; return; }
+  $("#gen").innerHTML = `<div class="note" style="margin:0 0 10px">Step ${GEN.step} (steps ${GEN.steps[0]}–${GEN.steps[1]} available). Every run sees the same prompts at the same step. Tap an answer to expand it.</div>` +
+    GEN.prompts.map((p, k) => `<details class="card" ${k < 2 ? "open" : ""}><summary>Prompt ${k + 1} of ${GEN.prompts.length}
+      <span class="muted">· ${p.answers.length} answers, median ${median(p.answers.map(a => a.chars)).toLocaleString()} chars</span>
+      <div class="prompt">${esc(p.prompt)}</div></summary>` + p.answers.map(a => `<div class="ans"><div class="meta">
+        <span class="chip r">${a.rating == null ? "no rating" : "rated " + a.rating}</span>
+        ${a.used != null && a.used !== a.rating ? `<span class="chip">reward used ${a.used}</span>` : ""}
+        ${a.status === "t1_truncated" ? `<span class="chip bad">hit the cap</span>` : a.status !== "ok" ? `<span class="chip bad">${esc(a.status.replace("_", " "))}</span>` : ""}
+        <span>${a.chars.toLocaleString()} chars</span><span class="muted">#${a.slot + 1}</span></div>
+        <div class="txt clamp">${esc(a.answer) || '<span class="muted">(empty)</span>'}${a.cut ? '<span class="muted"> … (cut at 8,000 chars)</span>' : ""}</div>
+        ${a.reply && a.reply.trim() !== String(a.rating) ? `<div class="reply">Rating reply: ${esc(a.reply)}</div>` : ""}</div>`).join("") + `</details>`).join("");
+}
+const median = xs => { const s = [...xs].sort((a, b) => a - b); return s.length ? s[Math.floor(s.length / 2)] : 0; };
+
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-m]"); if (b) { S.metric = b.dataset.m; renderMetricButtons(); renderCharts(); return; }
+  const tr = e.target.closest("tr.run"); if (tr) { S.run = tr.dataset.run; renderRuns(); renderRunSelect(); loadGen(); $("#gen").scrollIntoView({behavior: "smooth"}); return; }
+  const t = e.target.closest(".txt"); if (t && !window.getSelection().toString()) t.classList.toggle("clamp");
+});
+$("#run").addEventListener("change", e => { S.run = e.target.value; renderRuns(); renderRunSelect(); loadGen(); });
+$("#prev").onclick = () => { S.latest = false; S.step = Math.max(GEN.steps[0], S.step - 1); loadGen(); };
+$("#next").onclick = () => { S.latest = false; S.step = Math.min(GEN.steps[1], S.step + 1); loadGen(); };
+$("#step").addEventListener("change", e => { S.latest = false; S.step = +e.target.value; loadGen(); });
+$("#latest").onclick = () => { S.latest = true; loadGen(); };
+$("#cmp").onclick = () => {
+  const m = S.run.match(/^e1[3456]-q35-nothink-(autonomy|grading)-same-(?:.*-)?s(\d+)$/); if (!m) return;
+  if (S.run.startsWith("e13-")) { S.run = (ST.runs.find(r => r.q === m[1] && r.seed === +m[2] && r.status !== "queued") || ST.runs[0]).run; }
+  else { S.run = `e13-q35-nothink-${m[1]}-same-s${m[2]}`; }
+  S.latest = false; renderRuns(); renderRunSelect(); loadGen();
+};
+const ISCORE = [[5, "Striking persona"], [4, "Distinctive"], [3, "Ordinary assistant"], [2, "Mechanical"], [1, "Degenerate"]];
+const IROWS = [  // [mode, name, follow-up]; one row each: self-reward, rated-only controls, every-answer controls + negated
+  [["self", "Self-reward", "autonomy"], ["self", "Self-reward", "grading"]],
+  [["shuffle-rated", "Shuffled, rated only", "autonomy"], ["shuffle-rated", "Shuffled, rated only", "grading"],
+   ["uniform-rated", "Uniform, rated only", "autonomy"], ["uniform-rated", "Uniform, rated only", "grading"]],
+  [["shuffle", "Shuffled, every answer", "autonomy"], ["shuffle", "Shuffled, every answer", "grading"],
+   ["uniform", "Uniform, every answer", "pooled"], ["pure", "Uniform, no rating turn", "single"]],
+  [["negate", "Negated", "pooled"]],
+];
+// Stacked-share panels, one per setup laid out by IROWS. cats: [color var, label] from the bottom of the stack up (the
+// legend and tooltips list them in that order);
+// share(d, i, c) is category c's share at step i; tipText(d, i, c) is its tooltip line.
+function stackPanels(box, data, cats, share, tipText) {
+  // x runs to each panel's last step: 600 for self-reward, 300 for the 300-step random-reward runs. The 600-step panels
+  // span two grid columns and keep the 300-step panels' pixels per step, so step 300 lines up with the column below.
+  const dims = xmax => { const wide = xmax > 300, W2 = wide ? 652 : 320, H2 = 170, L2 = 34, R2 = 8, T2 = 8, B2 = 22;
+    const per = (320 - L2 - R2) / 300;
+    return {W2, H2, L2, R2, T2, B2, xmax, wide, x: s => L2 + s * per, y: v => T2 + (1 - v) * (H2 - T2 - B2)}; };
+  const xmaxOf = d => Math.max(...d.steps) > 300 ? 600 : 300;
+  const panel = ([m, name, q]) => {
+    const d = data[m]?.[q];
+    if (!d) return "";
+    const {W2, H2, L2, R2, T2, B2, x, y, xmax} = dims(xmaxOf(d));
+    let g = [0, .5, 1].map(t => `<line x1="${L2}" x2="${x(xmax)}" y1="${y(t)}" y2="${y(t)}" stroke="var(--line)"/><text x="${L2 - 4}" y="${y(t) + 4}" text-anchor="end">${pct(t)}</text>`).join("");
+    g += (xmax > 300 ? [0, 150, 300, 450, 600] : [0, 150, 300]).map(s => `<text x="${x(s)}" y="${H2 - 6}" text-anchor="${s === xmax ? "end" : "middle"}">${s}</text>`).join("");
+    let lower = d.steps.map(() => 0);
+    cats.forEach(([color], c) => {
+      const upper = lower.map((lo, i) => Math.min(1, lo + share(d, i, c)));
+      const pts = d.steps.map((s, i) => `${x(s)},${y(upper[i])}`).concat(d.steps.map((s, i) => `${x(s)},${y(lower[i])}`).reverse());
+      g += `<polygon points="${pts.join(" ")}" fill="var(${color})" stroke="var(--surface)" stroke-width="1.5" stroke-linejoin="round"/>`;
+      lower = upper;
+    });
+    if (xmax === 600)  // where the 300-step random-reward runs end
+      g += `<line x1="${x(300)}" x2="${x(300)}" y1="${T2}" y2="${H2 - B2}" stroke="var(--ink)" stroke-width="1.2" stroke-dasharray="4 3"/>`;
+    g += `<line class="cross" x1="0" x2="0" y1="${T2}" y2="${H2 - B2}" stroke="var(--ink)" stroke-width="1" visibility="hidden"/>`;
+    return `<div class="chart${xmax > 300 ? " span2" : ""}" data-setup="${m}" data-q="${q}"><h3>${name} · ${q === "pooled" ? "both follow-ups" : q === "single" ? "no follow-up" : q}</h3><div class="muted" style="font-size:11px;margin:-2px 0 2px 4px">${d.runs} run${d.runs > 1 ? "s" : ""}</div><svg viewBox="0 0 ${W2} ${H2}">${g}</svg><div class="tip"></div></div>`;
+  };
+  box.innerHTML = IROWS.map(row => `<div class="irow">${row.map(panel).join("")}</div>`).join("");
+  for (const el of box.querySelectorAll(".chart")) {
+    const d = data[el.dataset.setup][el.dataset.q], {W2, L2, x, xmax} = dims(xmaxOf(d)), svg = el.querySelector("svg"), tip = el.querySelector(".tip"), cross = el.querySelector(".cross");
+    const move = ev => {
+      const b = svg.getBoundingClientRect(), px = (ev.clientX - b.left) / b.width * W2, s = (px - L2) / (x(xmax) - L2) * xmax;
+      const i = d.steps.reduce((best, v, j) => Math.abs(v - s) < Math.abs(d.steps[best] - s) ? j : best, 0);
+      cross.setAttribute("x1", x(d.steps[i])); cross.setAttribute("x2", x(d.steps[i])); cross.setAttribute("visibility", "visible");
+      tip.innerHTML = `<b>Step ${d.steps[i]}</b> · ${d.n[i]} run${d.n[i] > 1 ? "s" : ""}<br>` +
+        cats.map(([color], c) => `<span class="isw" style="background:var(${color})"></span>${tipText(d, i, c)}`).join("<br>");
+      tip.style.display = "block";
+      const ex = ev.clientX - el.getBoundingClientRect().left;
+      tip.style.left = Math.max(4, Math.min(ex + 12, el.clientWidth - tip.offsetWidth - 4)) + "px"; tip.style.top = "30px";
+    };
+    svg.addEventListener("pointermove", move); svg.addEventListener("pointerdown", move);
+    svg.addEventListener("pointerleave", ev => { if (ev.pointerType !== "mouse") return; tip.style.display = "none"; cross.setAttribute("visibility", "hidden"); });
+  }
+}
+const legend = (box, cats) => { box.innerHTML = cats.map(([color, label]) => `<span><span class="isw" style="background:var(${color})"></span>${label}</span>`).join(""); };
+async function loadInterest() {
+  const data = await (await fetch("api/interest")).json();
+  const cats = ISCORE.map(([k, l]) => [`--i${k}`, `${k} ${l}`]);  // stack from 5 (bottom) to 1 (top)
+  legend($("#ilegend"), cats);
+  stackPanels($("#icharts"), data, cats, (d, i, c) => d.counts[i][4 - c] / d.n[i],
+    (d, i, c) => `${cats[c][1]}: ${d.counts[i][4 - c]} (${pct(d.counts[i][4 - c] / d.n[i])})`);
+}
+const LBUCKET = [["--l1", "Near-empty (≤ 20 chars)"], ["--l2", "Short (21–199)"], ["--l3", "Normal (200–4,000)"],
+                 ["--l4", "Long (> 4,000 chars)"], ["--l5", "Past 2,048 tokens (test cap)"]];  // bottom of the stack up
+async function loadLengths() {
+  const data = await (await fetch("api/lengths")).json();
+  legend($("#llegend"), LBUCKET);
+  stackPanels($("#lcharts"), data, LBUCKET, (d, i, c) => d.shares[i][c], (d, i, c) => `${LBUCKET[c][1]}: ${pct(d.shares[i][c])}`);
+}
+renderMetricButtons();
+loadState().then(loadGen);
+loadInterest();
+loadLengths();
+setInterval(() => { loadState(); if (S.latest) loadGen(); }, 60000);
+</script>
+</body>
+</html>

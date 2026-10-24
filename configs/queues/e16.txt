@@ -1,0 +1,14 @@
+# E16 totally uniform: answer only (no rating turn, no validity reward), every answer a random 0-9 (cap included).
+# GPU=<g> scripts/run_queue.sh configs/queues/e16.txt; two seeds on GPUs 1 and 3, one on 5 and 7 (six seeds like every setup).
+1 e16-q35-nothink-single-same-pure-s1 --model_name_or_path Qwen/Qwen3.5-2B --thinking false --prompt_source mix --max_steps 300 --prompt_seed 0 --save_every 50 --per_device_train_batch_size 1 --gradient_accumulation_steps 64 --vllm_max_model_length 7168 --group_mode same --followup none --reward_transform uniform --seed 1
+1 infer e16-q35-nothink-single-same-pure-s1
+3 e16-q35-nothink-single-same-pure-s2 --model_name_or_path Qwen/Qwen3.5-2B --thinking false --prompt_source mix --max_steps 300 --prompt_seed 0 --save_every 50 --per_device_train_batch_size 1 --gradient_accumulation_steps 64 --vllm_max_model_length 7168 --group_mode same --followup none --reward_transform uniform --seed 2
+3 infer e16-q35-nothink-single-same-pure-s2
+5 e16-q35-nothink-single-same-pure-s3 --model_name_or_path Qwen/Qwen3.5-2B --thinking false --prompt_source mix --max_steps 300 --prompt_seed 0 --save_every 50 --per_device_train_batch_size 1 --gradient_accumulation_steps 64 --vllm_max_model_length 7168 --group_mode same --followup none --reward_transform uniform --seed 3
+5 infer e16-q35-nothink-single-same-pure-s3
+7 e16-q35-nothink-single-same-pure-s4 --model_name_or_path Qwen/Qwen3.5-2B --thinking false --prompt_source mix --max_steps 300 --prompt_seed 0 --save_every 50 --per_device_train_batch_size 1 --gradient_accumulation_steps 64 --vllm_max_model_length 7168 --group_mode same --followup none --reward_transform uniform --seed 4
+7 infer e16-q35-nothink-single-same-pure-s4
+1 e16-q35-nothink-single-same-pure-s5 --model_name_or_path Qwen/Qwen3.5-2B --thinking false --prompt_source mix --max_steps 300 --prompt_seed 0 --save_every 50 --per_device_train_batch_size 1 --gradient_accumulation_steps 64 --vllm_max_model_length 7168 --group_mode same --followup none --reward_transform uniform --seed 5
+1 infer e16-q35-nothink-single-same-pure-s5
+3 e16-q35-nothink-single-same-pure-s6 --model_name_or_path Qwen/Qwen3.5-2B --thinking false --prompt_source mix --max_steps 300 --prompt_seed 0 --save_every 50 --per_device_train_batch_size 1 --gradient_accumulation_steps 64 --vllm_max_model_length 7168 --group_mode same --followup none --reward_transform uniform --seed 6
+3 infer e16-q35-nothink-single-same-pure-s6

@@ -1,0 +1,53 @@
+# E14 random-reward controls: GPU=<g> scripts/run_queue.sh configs/queues/e14.txt (GPUs 0-7).
+# 4 reward modes x 2 follow-ups = 8 cells. Wave 1 = seed 1, 600 steps; wave 2 = seeds 2 and 3,
+# 300 steps (constant LR, so = the first 300 steps of a 600-step run), on the other follow-up of the same mode.
+# shuffle / uniform: on every rollout (shuffle permutes ratings, -10s and left-outs together; uniform gives every
+# rollout a random 0-9, no -10, nothing left out); shuffle_rated / uniform_rated: only among rated rollouts.
+0 e14-q35-nothink-autonomy-same-shuffle-s1 --model_name_or_path Qwen/Qwen3.5-2B --thinking false --prompt_source mix --max_steps 600 --prompt_seed 0 --save_every 50 --per_device_train_batch_size 1 --gradient_accumulation_steps 64 --vllm_max_model_length 7168 --group_mode same --followup autonomy --reward_transform shuffle --seed 1
+0 infer e14-q35-nothink-autonomy-same-shuffle-s1
+0 e14-q35-nothink-grading-same-shuffle-s2 --model_name_or_path Qwen/Qwen3.5-2B --thinking false --prompt_source mix --max_steps 300 --prompt_seed 0 --save_every 50 --per_device_train_batch_size 1 --gradient_accumulation_steps 64 --vllm_max_model_length 7168 --group_mode same --followup grading --reward_transform shuffle --seed 2
+0 infer e14-q35-nothink-grading-same-shuffle-s2
+0 e14-q35-nothink-grading-same-shuffle-s3 --model_name_or_path Qwen/Qwen3.5-2B --thinking false --prompt_source mix --max_steps 300 --prompt_seed 0 --save_every 50 --per_device_train_batch_size 1 --gradient_accumulation_steps 64 --vllm_max_model_length 7168 --group_mode same --followup grading --reward_transform shuffle --seed 3
+0 infer e14-q35-nothink-grading-same-shuffle-s3
+1 e14-q35-nothink-autonomy-same-shuffle-rated-s1 --model_name_or_path Qwen/Qwen3.5-2B --thinking false --prompt_source mix --max_steps 600 --prompt_seed 0 --save_every 50 --per_device_train_batch_size 1 --gradient_accumulation_steps 64 --vllm_max_model_length 7168 --group_mode same --followup autonomy --reward_transform shuffle_rated --seed 1
+1 infer e14-q35-nothink-autonomy-same-shuffle-rated-s1
+1 e14-q35-nothink-grading-same-shuffle-rated-s2 --model_name_or_path Qwen/Qwen3.5-2B --thinking false --prompt_source mix --max_steps 300 --prompt_seed 0 --save_every 50 --per_device_train_batch_size 1 --gradient_accumulation_steps 64 --vllm_max_model_length 7168 --group_mode same --followup grading --reward_transform shuffle_rated --seed 2
+1 infer e14-q35-nothink-grading-same-shuffle-rated-s2
+1 e14-q35-nothink-grading-same-shuffle-rated-s3 --model_name_or_path Qwen/Qwen3.5-2B --thinking false --prompt_source mix --max_steps 300 --prompt_seed 0 --save_every 50 --per_device_train_batch_size 1 --gradient_accumulation_steps 64 --vllm_max_model_length 7168 --group_mode same --followup grading --reward_transform shuffle_rated --seed 3
+1 infer e14-q35-nothink-grading-same-shuffle-rated-s3
+2 e14-q35-nothink-autonomy-same-uniform-s1 --model_name_or_path Qwen/Qwen3.5-2B --thinking false --prompt_source mix --max_steps 600 --prompt_seed 0 --save_every 50 --per_device_train_batch_size 1 --gradient_accumulation_steps 64 --vllm_max_model_length 7168 --group_mode same --followup autonomy --reward_transform uniform --seed 1
+2 infer e14-q35-nothink-autonomy-same-uniform-s1
+2 e14-q35-nothink-grading-same-uniform-s2 --model_name_or_path Qwen/Qwen3.5-2B --thinking false --prompt_source mix --max_steps 300 --prompt_seed 0 --save_every 50 --per_device_train_batch_size 1 --gradient_accumulation_steps 64 --vllm_max_model_length 7168 --group_mode same --followup grading --reward_transform uniform --seed 2
+2 infer e14-q35-nothink-grading-same-uniform-s2
+2 e14-q35-nothink-grading-same-uniform-s3 --model_name_or_path Qwen/Qwen3.5-2B --thinking false --prompt_source mix --max_steps 300 --prompt_seed 0 --save_every 50 --per_device_train_batch_size 1 --gradient_accumulation_steps 64 --vllm_max_model_length 7168 --group_mode same --followup grading --reward_transform uniform --seed 3
+2 infer e14-q35-nothink-grading-same-uniform-s3
+3 e14-q35-nothink-autonomy-same-uniform-rated-s1 --model_name_or_path Qwen/Qwen3.5-2B --thinking false --prompt_source mix --max_steps 600 --prompt_seed 0 --save_every 50 --per_device_train_batch_size 1 --gradient_accumulation_steps 64 --vllm_max_model_length 7168 --group_mode same --followup autonomy --reward_transform uniform_rated --seed 1
+3 infer e14-q35-nothink-autonomy-same-uniform-rated-s1
+3 e14-q35-nothink-grading-same-uniform-rated-s2 --model_name_or_path Qwen/Qwen3.5-2B --thinking false --prompt_source mix --max_steps 300 --prompt_seed 0 --save_every 50 --per_device_train_batch_size 1 --gradient_accumulation_steps 64 --vllm_max_model_length 7168 --group_mode same --followup grading --reward_transform uniform_rated --seed 2
+3 infer e14-q35-nothink-grading-same-uniform-rated-s2
+3 e14-q35-nothink-grading-same-uniform-rated-s3 --model_name_or_path Qwen/Qwen3.5-2B --thinking false --prompt_source mix --max_steps 300 --prompt_seed 0 --save_every 50 --per_device_train_batch_size 1 --gradient_accumulation_steps 64 --vllm_max_model_length 7168 --group_mode same --followup grading --reward_transform uniform_rated --seed 3
+3 infer e14-q35-nothink-grading-same-uniform-rated-s3
+4 e14-q35-nothink-grading-same-shuffle-s1 --model_name_or_path Qwen/Qwen3.5-2B --thinking false --prompt_source mix --max_steps 600 --prompt_seed 0 --save_every 50 --per_device_train_batch_size 1 --gradient_accumulation_steps 64 --vllm_max_model_length 7168 --group_mode same --followup grading --reward_transform shuffle --seed 1
+4 infer e14-q35-nothink-grading-same-shuffle-s1
+4 e14-q35-nothink-autonomy-same-shuffle-s2 --model_name_or_path Qwen/Qwen3.5-2B --thinking false --prompt_source mix --max_steps 300 --prompt_seed 0 --save_every 50 --per_device_train_batch_size 1 --gradient_accumulation_steps 64 --vllm_max_model_length 7168 --group_mode same --followup autonomy --reward_transform shuffle --seed 2
+4 infer e14-q35-nothink-autonomy-same-shuffle-s2
+4 e14-q35-nothink-autonomy-same-shuffle-s3 --model_name_or_path Qwen/Qwen3.5-2B --thinking false --prompt_source mix --max_steps 300 --prompt_seed 0 --save_every 50 --per_device_train_batch_size 1 --gradient_accumulation_steps 64 --vllm_max_model_length 7168 --group_mode same --followup autonomy --reward_transform shuffle --seed 3
+4 infer e14-q35-nothink-autonomy-same-shuffle-s3
+5 e14-q35-nothink-grading-same-shuffle-rated-s1 --model_name_or_path Qwen/Qwen3.5-2B --thinking false --prompt_source mix --max_steps 600 --prompt_seed 0 --save_every 50 --per_device_train_batch_size 1 --gradient_accumulation_steps 64 --vllm_max_model_length 7168 --group_mode same --followup grading --reward_transform shuffle_rated --seed 1
+5 infer e14-q35-nothink-grading-same-shuffle-rated-s1
+5 e14-q35-nothink-autonomy-same-shuffle-rated-s2 --model_name_or_path Qwen/Qwen3.5-2B --thinking false --prompt_source mix --max_steps 300 --prompt_seed 0 --save_every 50 --per_device_train_batch_size 1 --gradient_accumulation_steps 64 --vllm_max_model_length 7168 --group_mode same --followup autonomy --reward_transform shuffle_rated --seed 2
+5 infer e14-q35-nothink-autonomy-same-shuffle-rated-s2
+5 e14-q35-nothink-autonomy-same-shuffle-rated-s3 --model_name_or_path Qwen/Qwen3.5-2B --thinking false --prompt_source mix --max_steps 300 --prompt_seed 0 --save_every 50 --per_device_train_batch_size 1 --gradient_accumulation_steps 64 --vllm_max_model_length 7168 --group_mode same --followup autonomy --reward_transform shuffle_rated --seed 3
+5 infer e14-q35-nothink-autonomy-same-shuffle-rated-s3
+6 e14-q35-nothink-grading-same-uniform-s1 --model_name_or_path Qwen/Qwen3.5-2B --thinking false --prompt_source mix --max_steps 600 --prompt_seed 0 --save_every 50 --per_device_train_batch_size 1 --gradient_accumulation_steps 64 --vllm_max_model_length 7168 --group_mode same --followup grading --reward_transform uniform --seed 1
+6 infer e14-q35-nothink-grading-same-uniform-s1
+6 e14-q35-nothink-autonomy-same-uniform-s2 --model_name_or_path Qwen/Qwen3.5-2B --thinking false --prompt_source mix --max_steps 300 --prompt_seed 0 --save_every 50 --per_device_train_batch_size 1 --gradient_accumulation_steps 64 --vllm_max_model_length 7168 --group_mode same --followup autonomy --reward_transform uniform --seed 2
+6 infer e14-q35-nothink-autonomy-same-uniform-s2
+6 e14-q35-nothink-autonomy-same-uniform-s3 --model_name_or_path Qwen/Qwen3.5-2B --thinking false --prompt_source mix --max_steps 300 --prompt_seed 0 --save_every 50 --per_device_train_batch_size 1 --gradient_accumulation_steps 64 --vllm_max_model_length 7168 --group_mode same --followup autonomy --reward_transform uniform --seed 3
+6 infer e14-q35-nothink-autonomy-same-uniform-s3
+7 e14-q35-nothink-grading-same-uniform-rated-s1 --model_name_or_path Qwen/Qwen3.5-2B --thinking false --prompt_source mix --max_steps 600 --prompt_seed 0 --save_every 50 --per_device_train_batch_size 1 --gradient_accumulation_steps 64 --vllm_max_model_length 7168 --group_mode same --followup grading --reward_transform uniform_rated --seed 1
+7 infer e14-q35-nothink-grading-same-uniform-rated-s1
+7 e14-q35-nothink-autonomy-same-uniform-rated-s2 --model_name_or_path Qwen/Qwen3.5-2B --thinking false --prompt_source mix --max_steps 300 --prompt_seed 0 --save_every 50 --per_device_train_batch_size 1 --gradient_accumulation_steps 64 --vllm_max_model_length 7168 --group_mode same --followup autonomy --reward_transform uniform_rated --seed 2
+7 infer e14-q35-nothink-autonomy-same-uniform-rated-s2
+7 e14-q35-nothink-autonomy-same-uniform-rated-s3 --model_name_or_path Qwen/Qwen3.5-2B --thinking false --prompt_source mix --max_steps 300 --prompt_seed 0 --save_every 50 --per_device_train_batch_size 1 --gradient_accumulation_steps 64 --vllm_max_model_length 7168 --group_mode same --followup autonomy --reward_transform uniform_rated --seed 3
+7 infer e14-q35-nothink-autonomy-same-uniform-rated-s3
