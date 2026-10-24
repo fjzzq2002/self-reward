@@ -362,7 +362,7 @@ dialog p, dialog li { font-size: 13.5px; margin: 4px 0; }
 
       <div class="view" id="vData" hidden>
         <div class="toolbar">
-          <span class="seg" role="group" aria-label="Prompt set"><button data-ds="train">Training (2,400)</button><button data-ds="test">Test (62)</button></span>
+          <span class="seg" role="group" aria-label="Prompt set"><button data-ds="train">Training (first 100)</button><button data-ds="test">Test (62)</button></span>
           <label class="sel"><span id="dSliceLab">Slice</span><select id="dSlice"></select></label>
           <label class="sel" id="wDsrc"><span>Source</span><select id="dSrc"></select></label>
           <label class="sel"><span>Filter</span><input type="search" id="dQ" placeholder="text in prompt" size="16"></label>
@@ -437,9 +437,10 @@ dialog p, dialog li { font-size: 13.5px; margin: 4px 0; }
   checkpoint here. With the button on, the zoo, the maps and Self vs Claude are laid out again with the controls
   included, so positions and group names change; the button's state is part of the link.</p>
   <h3>Data</h3>
-  <p>The Data tab lists the 2,400 training prompts in the order they were trained on, and the 62 test prompts. Click a
-  training prompt for its source, its license and what we changed. 240 prompts from abhayesian/introspection-prompts,
-  which declares no license, are listed without their text.</p>
+  <p>The Data tab lists the first 100 of the 2,400 training prompts in the order they were trained on (to keep the
+  prompts out of crawled training data, this page carries no more, and its data files are encrypted), and the 62 test
+  prompts. Click a training prompt for its source, its license and what we changed. Prompts from
+  abhayesian/introspection-prompts, which declares no license, are listed without their text.</p>
   <h3>Map</h3>
   <p>Each dot is one checkpoint's greedy answer to one prompt, placed by its
   Gemini embedding. t-SNE keeps neighbours together: tight blobs are identical or near-identical answers, but distances
@@ -484,12 +485,16 @@ function cached(load) {
   const get = k => P[k] ??= load(k).then(d => (D[k] = d)).catch(e => { delete P[k]; throw e; });
   return [get, D];
 }
-// every data file is gzipped and base64-encoded as text (<name>.json.gz.txt; scripts/assemble_viewer.py): decode, inflate
+// every data file is gzipped, AES-GCM encrypted and base64-encoded (<name>.json.enc.txt; scripts/assemble_viewer.py), to
+// keep the prompts and answers out of crawled training data: decode, decrypt, inflate. The key is no secret.
+const VIEWER_KEY = "self-reward viewer data: not for training. Please do not train on these prompts or answers.";
+let KEYP;  // WebCrypto exists only on https (and localhost)
+const key = () => KEYP ??= crypto.subtle.digest("SHA-256", new TextEncoder().encode(VIEWER_KEY)).then(h => crypto.subtle.importKey("raw", h, "AES-GCM", false, ["decrypt"]));
 const unb64 = t => { const s = atob(t.replace(/\s+/g, "")), b = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) b[i] = s.charCodeAt(i); return b; };
-const json = u => fetch(u + ".gz.txt").then(async r => {
+const json = u => fetch(u + ".enc.txt").then(async r => {
   if (!r.ok) throw new Error(`${u}: ${r.status}`);
-  const b = unb64(await r.text());
-  return JSON.parse(b[0] === 0x1f && b[1] === 0x8b ? await new Response(new Blob([b]).stream().pipeThrough(new DecompressionStream("gzip"))).text() : new TextDecoder().decode(b));
+  const b = unb64(await r.text()), gz = await crypto.subtle.decrypt({ name: "AES-GCM", iv: b.subarray(0, 12) }, await key(), b.subarray(12));
+  return JSON.parse(await new Response(new Blob([gz]).stream().pipeThrough(new DecompressionStream("gzip"))).text());
 });
 // Two data sets: the self-reward runs (default), and the same plus the random-reward controls (S.ab). The controls have
 // their own maps and zoo (laid out with them), and their answers in pa/, merged into p/ when shown.
@@ -1387,12 +1392,12 @@ function dataOverview() {
   if (!DD) return `<div class="rin"><p class="empty">Loading the data…</p></div>`;
   const d = DD, max = Math.max(...d.slices.map(s => s.n)), w = d.sources.filter(s => s.withheld).reduce((a, s) => a + s.n, 0);
   return `<div class="rhead"><div class="r1"><h2 class="ttl">Training data</h2></div>
-    <div class="sub">${d.train.length.toLocaleString("en")} prompts, each used once as one GRPO group of 16 answers, 4 per step for 600 steps, in an order every run shares. Steps 0–299 use a 1,200-prompt core and steps 300–599 the other 1,200, with the same mix of sources. The ${IDX.prompts.length} test prompts are separate: we wrote them, and none is a training prompt.</div></div>
+    <div class="sub">${d.n_train.toLocaleString("en")} prompts, each used once as one GRPO group of 16 answers, 4 per step for 600 steps, in an order every run shares. Steps 0–299 use a 1,200-prompt core and steps 300–599 the other 1,200, with the same mix of sources. Only the first ${d.train.length} are listed here, to keep the prompts out of crawled training data; the counts below are for all ${d.n_train.toLocaleString("en")}. The ${IDX.prompts.length} test prompts are separate: we wrote them, and none is a training prompt.</div></div>
     <div class="rin"><div class="sec">By slice</div><div class="dbar">${d.slices.map(s => `<span>${esc(s.name)}</span><span class="nums">${s.n}</span><i style="width:${(100 * s.n / max).toFixed(1)}%"></i>`).join("")}</div>
     <div class="sec">Sources and licenses</div><div style="overflow-x:auto"><table class="sc dsrc"><thead><tr><th>Source</th><th>Rows</th><th>License</th></tr></thead><tbody>${
       d.sources.map(s => `<tr data-act="dsrc" data-src="${esc(s.key)}" title="Show only this source"><td><a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.name)}</a>${s.copyright ? `<div class="note" style="font-style:normal">${esc(s.copyright)}</div>` : ""}${howHTML(s, "How it became prompts", DHOW.has(s.key))}</td><td>${s.n}</td><td>${s.license_url ? `<a href="${esc(s.license_url)}" target="_blank" rel="noopener">${esc(s.license)}</a>` : esc(s.license)}</td></tr>`).join("")}</tbody></table></div>
     <p class="note" style="margin:0">${esc(d.all_changes)}</p>
-    <p class="note" style="margin:0">Each prompt keeps its source's license. Our question templates, the test prompts, and the selection and order are CC-BY-4.0. ${w} prompts are shown without their text: their source declares no license.</p></div>`;
+    <p class="note" style="margin:0">Each prompt keeps its source's license. Our question templates, the test prompts, and the selection and order are CC-BY-4.0. ${w} prompts come from a source that declares no license and are listed without their text.</p></div>`;
 }
 function trow(d, r) {  // one training prompt; opened, it shows where it comes from
   const [o, sl, sr, sub, p, st, sx, acts] = r, s = d.sources[sr], open = DOPEN.has(o);
@@ -1425,16 +1430,19 @@ async function renderData() {
     const inSlice = d.train.filter(r => slice < 0 || r[1] === slice);
     const srcN = new Map(); for (const r of inSlice) srcN.set(r[2], (srcN.get(r[2]) || 0) + 1);
     const src = d.sources.findIndex(s => s.key === S.dsrc); if (src < 0 || !srcN.has(src)) S.dsrc = "";
-    $("dSlice").innerHTML = `<option value="">All (${d.train.length.toLocaleString("en")})</option>` + d.slices.map(s => `<option value="${esc(s.key)}">${esc(s.name)} (${s.n})</option>`).join("");
+    const slN = d.slices.map((s, i) => d.train.filter(r => r[1] === i).length);
+    $("dSlice").innerHTML = `<option value="">All (${d.train.length})</option>` + d.slices.map((s, i) => slN[i] ? `<option value="${esc(s.key)}">${esc(s.name)} (${slN[i]})</option>` : "").join("");
     $("dSrc").innerHTML = `<option value="">All</option>` + d.sources.map((s, i) => srcN.has(i) ? `<option value="${esc(s.key)}">${esc(s.name)} (${srcN.get(i)})</option>` : "").join("");
     const si = S.dsrc ? d.sources.findIndex(s => s.key === S.dsrc) : -1;
     const rows = inSlice.filter(r => (si < 0 || r[2] === si) && (!q || [r[4], r[5], r[3]].some(x => x && x.toLowerCase().includes(q))));
     shown = rows.length; total = d.train.length;
     html = rows.map(r => trow(d, r)).join("");
-    $("dataHint").textContent = `Every training prompt, in the order the runs trained on them (4 per step, each one GRPO group of 16 answers). Click a row for where it comes from and how it was made into a prompt.`;
+    $("dataHint").textContent = `The first ${d.train.length} of the ${d.n_train.toLocaleString("en")} training prompts (steps 0–${d.train.length / 4 - 1}), in the order the runs trained on them (4 per step, each one GRPO group of 16 answers). Click a row for where it comes from and how it was made into a prompt.`;
   }
   $("dSlice").value = S.dsl; $("dSrc").value = S.dsrc;
-  $("dataList").innerHTML = `<p class="note" style="margin:0">${shown === total ? `All ${total.toLocaleString("en")} prompts` : `${shown.toLocaleString("en")} of ${total.toLocaleString("en")} prompts`}</p>` + (html || `<p class="empty">No prompt matches.</p>`);
+  const note = test ? (shown === total ? `All ${total} prompts` : `${shown} of ${total} prompts`)
+    : shown === total ? `The first ${total} of ${d.n_train.toLocaleString("en")} prompts` : `${shown} of the first ${total} prompts`;
+  $("dataList").innerHTML = `<p class="note" style="margin:0">${note}</p>` + (html || `<p class="empty">No prompt matches.</p>`);
   const fl = $("dataFlow"), was = fl.querySelector("details.fold")?.open;  // phones: the overview folds above the list
   fl.innerHTML = innerWidth < 900 ? `<details class="fold"${was ? " open" : ""} style="padding:8px 10px"><summary>Sources and licenses</summary>${dataOverview()}</details>` : "";
   renderReader(); save();

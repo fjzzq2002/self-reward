@@ -412,7 +412,9 @@ def copyright_of(info: dict) -> str | None:
     return next((ln.strip() for ln in (SRC / lf).read_text().splitlines() if ln.startswith("Copyright")), None)
 
 
-def write_viewer(out: Path, train: pd.DataFrame) -> None:
+def write_viewer(out: Path, train: pd.DataFrame, limit: int = 100) -> None:
+    """The Data tab: source and slice tables over every prompt, but the text of only the first `limit` in training order
+    (to keep the prompts out of crawled training data; the full set is on Hugging Face)."""
     keys = list(SOURCES)
     src = [dict(key=SOURCES[k]["key"], name=SOURCES[k]["short"], url=SOURCES[k]["url"], license=SOURCES[k]["license"],
                 license_url=LICENSE_URLS.get(SOURCES[k]["license"]), copyright=copyright_of(SOURCES[k]),
@@ -423,9 +425,11 @@ def write_viewer(out: Path, train: pd.DataFrame) -> None:
     val = lambda v: None if v is None or v is pd.NA or (isinstance(v, float) and pd.isna(v)) else v  # noqa: E731
     rows = [[int(r.order), sl.index(r.slice), si[r.source], val(r.subset) or "", val(r.prompt), val(r.source_text),
              None if val(r.source_index) is None else int(r.source_index),
-             json.loads(r.meta).get("actions") if isinstance(r.meta, str) else None] for r in train.itertuples()]  # fmt: skip
+             json.loads(r.meta).get("actions") if isinstance(r.meta, str) else None]
+            for r in train.sort_values("order").head(limit).itertuples()]  # fmt: skip
     data = dict(all_changes=ALL_CHANGES, slices=[dict(key=k, name=SLICES[k], n=int((train.slice == k).sum())) for k in sl], sources=src,
-                cols=["order", "slice", "source", "subset", "prompt", "source_text", "source_index", "actions"], train=rows)
+                cols=["order", "slice", "source", "subset", "prompt", "source_text", "source_index", "actions"], train=rows,
+                n_train=len(train))
     (out / "data.json").write_text(json.dumps(data, ensure_ascii=False, separators=(",", ":")))
 
 

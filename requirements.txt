@@ -19,3 +19,4 @@ matplotlib==3.11.2
 # Map clustering (scripts/cluster_maps.py, make_zoo.py); kept out of the training env in our setup, any env works:
 scikit-learn==1.9.1
 scipy==1.18.1
+cryptography==50.0.1  # viewer data encryption (assemble_viewer.py)
